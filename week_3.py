@@ -71,6 +71,7 @@ def make_triangle(turtle, side = 50, color = "red"):
 t = turtle.Turtle()
 triangle = make_triangle(turtle)
 triangle.draw()
+triangle.color = "blue"
 triangle.translate(Vector3(100,100,100))
 triangle.rotate(math.pi/3, 'z')
 triangle.draw()
