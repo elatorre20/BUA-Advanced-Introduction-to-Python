@@ -261,6 +261,6 @@ scene1.meshes[0].rotate(math.pi/5,"z")
 while(True):
     scene1.meshes[0].rotate(math.pi/64,"y")
     scene1.update()
-    time.sleep(0.03)
+    time.sleep(0.05)
     
     
