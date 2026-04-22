@@ -19,7 +19,7 @@ class Vector3:
         return Vector3(self.x - b.x, self.y - b.y, self.z - b.z)
     
     def __sub__(self, b):
-        return self.subtract(b)
+        return self.sub(b)
     
     def mul(self, s):
         return Vector3(self.x * s, self.y * s, self.z * s)
@@ -65,12 +65,12 @@ class Polygon:
         self.turtle.end_fill()
         
     def translate(self,a):
-        for i in self.vertices:
-            i.add(a)
+        for i in range(len(self.vertices)):
+            self.vertices[i] = self.vertices[i] + a
             
     def scale(self, a):
-        for i in self.vertices:
-            i.mul(a)
+        for i in range(len(self.vertices)):
+            self.vertices[i] = Vector3(self.vertices[i].x * a.x, self.vertices[i].y * a.y, self.vertices[i].z * a.z)
             
     def mirror(self, a):
         for i in range(len(self.vertices)):
@@ -100,11 +100,8 @@ class Polygon:
         return(zmin)
     
     def get_normal(self):
-        point0 = self.vertices[0]
-        point1 = self.vertices[1]
-        point2 = self.vertices[2]
-        a = point1.sub(point0)
-        b = point2.sub(point0)
+        a = self.vertices[1] - self.vertices[0]
+        b = self.vertices[2] - self.vertices[0]
         return a.cross_product(b).get_normalized()
 
 class Mesh:
@@ -118,7 +115,7 @@ class Mesh:
         self.polygons.append(polygon)
         
     def translate(self, a):
-        self.offset.add(a)
+        self.offset = self.offset + a
         for i in self.polygons:
             i.translate(a)
         
@@ -134,12 +131,27 @@ class Mesh:
             i.translate(self.offset)
                 
     def scale(self, a):
+        # shift to origin
+        for i in self.polygons:
+            i.translate(Vector3(-self.offset.x, -self.offset.y, -self.offset.z))
+        #scale
         for i in self.polygons:
             i.scale(a)
+        # shift back
+        for i in self.polygons:
+            i.translate(self.offset)
         
     def mirror(self, a):
+        # shift to origin
+        for i in self.polygons:
+            i.translate(Vector3(-self.offset.x, -self.offset.y, -self.offset.z))
+        #mirror
         for i in self.polygons:
             i.mirror(a)
+        # shift back
+        for i in self.polygons:
+            i.translate(self.offset)
+        
     
     def draw(self, ambient, directional):
         self.polygons = sorted(self.polygons, key = lambda l: l.get_zmin())
@@ -193,31 +205,51 @@ def make_triangle(turtle, side = 50, color = "red"):
     return Polygon([v0,v1,v2], color, turtle)
 
 def make_cube(turtle, side, colors=[
-        (255, 0, 0),      # red
-        (0, 0, 255),      # blue
-        (0, 255, 0),      # green
-        (0, 255, 255),    # cyan
-        (255, 255, 0),    # yellow
-        (255, 0, 255)     # magenta
+        (255, 0, 0),
+        (0, 0, 255),
+        (0, 255, 0),
+        (0, 255, 255),
+        (255, 255, 0),
+        (255, 0, 255)
     ]):
     h = side / 2
-    v = [
-        Vector3(-h, -h, -h),  # 0
-        Vector3(h, -h, -h),   # 1
-        Vector3(h, h, -h),    # 2
-        Vector3(-h, h, -h),   # 3
-        Vector3(-h, -h, h),   # 4
-        Vector3(h, -h, h),    # 5
-        Vector3(h, h, h),     # 6
-        Vector3(-h, h, h)     # 7
-    ]
     faces = [
-        Polygon([v[0], v[1], v[2], v[3]], colors[0], turtle),    # back
-        Polygon([v[4], v[7], v[6], v[5]], colors[1], turtle),   # front
-        Polygon([v[0], v[4], v[5], v[1]], colors[2], turtle),  # bottom
-        Polygon([v[3], v[2], v[6], v[7]], colors[3], turtle), # top
-        Polygon([v[1], v[5], v[6], v[2]], colors[4], turtle), # right
-        Polygon([v[0], v[3], v[7], v[4]], colors[5], turtle)  # left
+        Polygon([
+            Vector3(-h, -h, -h),
+            Vector3(h, -h, -h),
+            Vector3(h, h, -h),
+            Vector3(-h, h, -h)
+        ], colors[0], turtle),
+        Polygon([
+            Vector3(-h, -h, h),
+            Vector3(-h, h, h),
+            Vector3(h, h, h),
+            Vector3(h, -h, h)
+        ], colors[1], turtle),
+        Polygon([
+            Vector3(-h, -h, -h),
+            Vector3(-h, -h, h),
+            Vector3(h, -h, h),
+            Vector3(h, -h, -h)
+        ], colors[2], turtle),
+        Polygon([
+            Vector3(-h, h, -h),
+            Vector3(h, h, -h),
+            Vector3(h, h, h),
+            Vector3(-h, h, h)
+        ], colors[3], turtle),
+        Polygon([
+            Vector3(h, -h, -h),
+            Vector3(h, -h, h),
+            Vector3(h, h, h),
+            Vector3(h, h, -h)
+        ], colors[4], turtle),
+        Polygon([
+            Vector3(-h, -h, -h),
+            Vector3(-h, h, -h),
+            Vector3(-h, h, h),
+            Vector3(-h, -h, h)
+        ], colors[5], turtle)
     ]
 
     return Mesh(turtle, faces)
@@ -225,7 +257,7 @@ def make_cube(turtle, side, colors=[
 scene1 = Scene()
 scene1.add_cube(200)
 scene1.meshes[0].rotate(math.pi/4,"x")
-scene1.meshes[0].rotate(math.pi/4,"z")
+scene1.meshes[0].rotate(math.pi/5,"z")
 while(True):
     scene1.meshes[0].rotate(math.pi/64,"y")
     scene1.update()
