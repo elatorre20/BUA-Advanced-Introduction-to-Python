@@ -1,6 +1,7 @@
 import turtle
 import math
 import time
+import random
 
 class Vector3:
     
@@ -173,6 +174,13 @@ class Mesh:
             self.turtle.goto(i.vertices[0].x,i.vertices[0].y)
             self.turtle.end_fill()
             self.turtle.penup()
+            
+    def add_polygon(self, side = 50, sides = 4, color = (255,0,0), offset= Vector3(), rot_init = Vector3()):
+        self.polygons.append(make_polygon(self.turtle, side, sides, color))
+        self.polygons[-1].rotate(rot_init.x, 'x')
+        self.polygons[-1].rotate(rot_init.y, 'y')
+        self.polygons[-1].rotate(rot_init.z, 'z')
+        self.polygons[-1].translate(offset)
 
 class Scene:
     
@@ -197,12 +205,32 @@ class Scene:
         self.meshes.append(make_cube(self.turtle, dim))
         self.meshes[-1].translate(offset)
 
-def make_triangle(turtle, side = 50, color = "red"):
+def make_triangle(turtle, side = 50, color = (255,0,0)):
     height = math.sqrt(3)*side/2
     v0 = Vector3(0,height*2/3,0)
     v1 = Vector3(-side/2,-height/3,0)
     v2 = Vector3(side/2, -height/3,0)
     return Polygon([v0,v1,v2], color, turtle)
+    
+def make_polygon(turtle, side = 50, sides = 4, color = (255,0,0)):
+    vertices = []
+    vertices.append(Vector3(0,0,0))
+    internal_angle = (2*math.pi)/sides
+    angle = 0
+    for i in range(sides-1):
+        next_side = Vector3(math.cos(angle)*side, math.sin(angle)*side, 0)
+        vertices.append(next_side + vertices[-1])
+        angle = angle + internal_angle
+        
+    center = Vector3(0, 0, 0)
+    for v in vertices:
+        center = center + v
+    center = center * (1 / len(vertices))
+
+    for i in range(len(vertices)):
+        vertices[i] = vertices[i] - center
+        
+    return Polygon(vertices, color, turtle)
 
 def make_cube(turtle, side, colors=[
         (255, 0, 0),
@@ -255,12 +283,78 @@ def make_cube(turtle, side, colors=[
     return Mesh(turtle, faces)
 
 scene1 = Scene()
-scene1.add_cube(200)
-scene1.meshes[0].rotate(math.pi/4,"x")
-scene1.meshes[0].rotate(math.pi/5,"z")
+scene1.screen.bgcolor(128,128,128)
+die = make_cube(scene1.turtle, 200,[(255,255,255),(255,255,255),(255,255,255),(255,255,255),(255,255,255),(255,255,255)])
+#one face
+die.add_polygon(5,30,(0,0,0),Vector3(0,0,101))
+#two face
+die.add_polygon(5,30,(0,0,0),Vector3(50,50,-101))
+die.add_polygon(5,30,(0,0,0),Vector3(-50,-50,-101))
+#three face
+die.add_polygon(5,30,(0,0,0),Vector3(50,101,50),Vector3(math.pi/2,0,0))
+die.add_polygon(5,30,(0,0,0),Vector3(0,101,0),Vector3(math.pi/2,0,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-50,101,-50),Vector3(math.pi/2,0,0))
+#four face
+die.add_polygon(5,30,(0,0,0),Vector3(50,-101,50),Vector3(math.pi/2,0,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-50,-101,50),Vector3(math.pi/2,0,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-50,-101,-50),Vector3(math.pi/2,0,0))
+die.add_polygon(5,30,(0,0,0),Vector3(50,-101,-50),Vector3(math.pi/2,0,0))
+#five face
+die.add_polygon(5,30,(0,0,0),Vector3(101,50,50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(101,50,-50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(101,0,0),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(101,-50,-50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(101,-50,50),Vector3(0,math.pi/2,0))
+#six face
+die.add_polygon(5,30,(0,0,0),Vector3(-101,-50,50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-101,0,50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-101,50,50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-101,-50,-50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-101,0,-50),Vector3(0,math.pi/2,0))
+die.add_polygon(5,30,(0,0,0),Vector3(-101,50,-50),Vector3(0,math.pi/2,0))
+
+shadow = Mesh(scene1.turtle)
+shadow.add_polygon(25,30,(0,0,0),Vector3(),Vector3(math.pi/4,0,0))
+
+scene1.meshes.append(shadow)
+scene1.meshes.append(die)
+die.rotate(math.pi/4,"x")
+die.rotate(math.pi/5,"z")
+die.translate(Vector3(-500,300,0))
+shadow.translate(Vector3(-500,-250,0))
+xvelocity = 6
+yvelocity = -20
 while(True):
-    scene1.meshes[0].rotate(math.pi/64,"y")
+    #move and rotate die
+    die.translate(Vector3(xvelocity,yvelocity,0))
+    rotation = random.uniform(0,-math.pi/32)
+    die.rotate(math.pi/32,"x")
+    rotation = random.uniform(0,-math.pi/32)
+    die.rotate(math.pi/32,"y")
+    rotation = random.uniform(0,-math.pi/32)
+    die.rotate(math.pi/32,"z")
+    #move and scale shadow
+    shadow.translate(Vector3(xvelocity,0,0))
+    if(yvelocity < 0):
+        shadow.scale(Vector3(1.0525,1.0525,1.0525))
+    else:
+        shadow.scale(Vector3(0.9,0.9,0.9))
     scene1.update()
-    time.sleep(0.05)
+    #update velocity
+    if(yvelocity < 0):
+        yvelocity = yvelocity * 1.5
+    else:
+        yvelocity = yvelocity * 0.4
+        if(yvelocity < 1):
+            yvelocity = -1
+    if(die.offset.y < -50):
+        yvelocity = yvelocity * -1
+    #move back to start if out of frame
+    if(die.offset.x > 500):
+        shadow.translate(Vector3(die.offset.x * -2,0,0))
+        die.translate(Vector3(die.offset.x * -2,300-die.offset.y,0))
+        yvelocity = -20
+    #delay till next frame
+    time.sleep(0.02)
     
     
